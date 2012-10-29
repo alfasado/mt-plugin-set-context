@@ -17,10 +17,7 @@ function smarty_block_mtsetcontext( $args, $content, $ctx, &$repeat ) {
             $ctx->stash( 'blog', $blog );
             $ctx->stash( 'blog_id', $args[ 'blog_id' ] );
         }
-        if ( isset( $args[ 'author_id' ] ) ) {
-            $author = $ctx->mt->db()->fetch_author( $args[ 'author_id' ] );
-            $ctx->stash( 'author', $author );
-        }
+        $blog = $ctx->stash( 'blog' );
         if ( isset( $args[ 'author_id' ] ) ) {
             $author = $ctx->mt->db()->fetch_author( $args[ 'author_id' ] );
             $ctx->stash( 'author', $author );
@@ -32,6 +29,13 @@ function smarty_block_mtsetcontext( $args, $content, $ctx, &$repeat ) {
         if ( isset( $args[ 'category_id' ] ) ) {
             $category = $ctx->mt->db()->fetch_category( $args[ 'category_id' ] );
             $ctx->stash( 'category', $category );
+            if ( $category ) {
+                if ( $blog->id != $category->blog_id ) {
+                    $blog = $ctx->mt->db()->fetch_blog( $category->blog_id );
+                    $ctx->stash( 'blog', $blog );
+                    $ctx->stash( 'blog_id', $category->blog_id );
+                }
+            }
         }
         require_once( 'MTUtil.php' );
         if ( isset( $args[ 'include_blogs' ] ) or isset( $args[ 'exclude_blogs' ] ) ) {
@@ -45,6 +49,11 @@ function smarty_block_mtsetcontext( $args, $content, $ctx, &$repeat ) {
                 if ( is_array( $category ) ) {
                     $category = $category[ 0 ];
                     $ctx->stash( 'category', $category );
+                    if ( $blog->id != $category->blog_id ) {
+                        $blog = $ctx->mt->db()->fetch_blog( $category->blog_id );
+                        $ctx->stash( 'blog', $blog );
+                        $ctx->stash( 'blog_id', $category->blog_id );
+                    }
                 }
             }
         }
@@ -54,12 +63,22 @@ function smarty_block_mtsetcontext( $args, $content, $ctx, &$repeat ) {
                 if ( is_array( $category ) ) {
                     $category = $category[ 0 ];
                     $ctx->stash( 'category', $category );
+                    if ( $blog->id != $category->blog_id ) {
+                        $blog = $ctx->mt->db()->fetch_blog( $category->blog_id );
+                        $ctx->stash( 'blog', $blog );
+                        $ctx->stash( 'blog_id', $category->blog_id );
+                    }
                 }
             }
         }
         if ( isset( $args[ 'entry_id' ] ) ) {
             $entry = $ctx->mt->db()->fetch_entry( $args[ 'entry_id' ] );
             $ctx->stash( 'entry', $entry );
+            if ( $blog->id != $entry->blog_id ) {
+                $blog = $ctx->mt->db()->fetch_blog( $entry->blog_id );
+                $ctx->stash( 'blog', $blog );
+                $ctx->stash( 'blog_id', $entry->blog_id );
+            }
         }
         if ( isset( $args[ 'current_timestamp' ] ) ) {
             $ctx->stash( 'current_timestamp', $args[ 'current_timestamp' ] );
