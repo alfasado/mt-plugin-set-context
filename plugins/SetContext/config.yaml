@@ -1,0 +1,12 @@
+name: SetContext
+id:   SetContext
+key:  setcontext
+version: 0.1
+author_link: https://alfasado.net/
+author_name: Alfasado Inc.
+l10n_class: SetContext::L10N
+description: <__trans phrase="Set context Blog,Category,Entry and Timestamp.">
+tags:
+    block:
+        SetContext: $setcontext::SetContext::Tags::_hdlr_set_context
+        ClearContext: $setcontext::SetContext::Tags::_hdlr_clear_context
