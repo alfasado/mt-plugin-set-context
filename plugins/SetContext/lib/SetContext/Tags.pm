@@ -12,10 +12,14 @@ sub _hdlr_set_context {
     my $orig_author = $ctx->stash( 'author' );
     my $orig_current_timestamp = $ctx->{ current_timestamp };
     my $orig_current_timestamp_end = $ctx->{ current_timestamp_end };
+    my $tokens = $ctx->stash( 'tokens' );
+    my $builder = $ctx->stash( 'builder' );
+    require MT::Template::Context;
+    $ctx = MT::Template::Context->new;
     if ( my $blog_id = $args->{ blog_id } ) {
         $blog = MT::Blog->load( $blog_id );
-        $ctx->{ __stash }{ blog } = $blog;
-        $ctx->{ __stash }{ blog_id } = $blog->id;
+        $ctx->stash( 'blog', $blog );
+        $ctx->stash( 'blog_id', $blog->id );
         $args->{ blog_id } = $blog->id;
     }
     my ( %blog_terms, %blog_args );
@@ -24,50 +28,56 @@ sub _hdlr_set_context {
     if ( my $author_id = $args->{ author_id } ) {
         require MT::Author;
         my $author = MT::Author->load( $author_id );
-        $ctx->{ __stash }{ author } = $author;
+        $ctx->stash( 'author', $author );
     }
-    if ( my $author = $args->{ author } ) {
+    if ( my $author_name = $args->{ author } ) {
         require MT::Author;
-        my $author = MT::Author->load( { name => $author } );
-        $ctx->{ __stash }{ author } = $author;
+        my $author = MT::Author->load( { name => $author_name } );
+        $ctx->stash( 'author', $author );
     }
     if ( my $entry_id = $args->{ entry_id } ) {
         require MT::Entry;
         my $entry = MT::Entry->load( $entry_id );
-        $ctx->{ __stash }{ entry } = $entry;
+        $ctx->stash( 'entry', $entry );
         if ( $blog->id != $entry->blog_id ) {
-            $ctx->{ __stash }{ blog } = $entry->blog;
-            $ctx->{ __stash }{ blog_id } = $entry->blog_id;
+            $ctx->stash( 'blog', $entry->blog );
+            $ctx->stash( 'blog_id', $entry->blog->id );
         }
     }
     if ( my $category_id = $args->{ category_id } ) {
         require MT::Category;
         my $category = MT::Category->load( $category_id );
-        $ctx->{ __stash }{ category } = $category;
-        $ctx->{ __stash }{ archive_category } = $category;
+        $ctx->stash( 'category', $category );
+        $ctx->stash( 'archive_category', $category );
         if ( $blog->id != $category->blog_id ) {
-            $ctx->{ __stash }{ blog } = MT::Blog->load( $category->blog_id );
-            $ctx->{ __stash }{ blog_id } = $category->blog_id;
+            $ctx->stash( 'blog', MT::Blog->load( $category->blog_id ) );
+            $ctx->stash( 'blog_id', $category->blog_id );
         }
     }
     if ( my $category_arg = $args->{ category } ) {
-        my $category = $ctx->cat_path_to_category( $category_arg,
+        my @cats = $ctx->cat_path_to_category( $category_arg,
             [ \%blog_terms, \%blog_args ], 'category' );
-        $ctx->{ __stash }{ category } = $category;
-        $ctx->{ __stash }{ archive_category } = $category;
-        if ( $blog->id != $category->blog_id ) {
-            $ctx->{ __stash }{ blog } = MT::Blog->load( $category->blog_id );
-            $ctx->{ __stash }{ blog_id } = $category->blog_id;
+        if ( @cats ) {
+            my $category = $cats[ 0 ];
+            $ctx->stash( 'category', $category );
+            $ctx->stash( 'archive_category', $category );
+            if ( $blog->id != $category->blog_id ) {
+                $ctx->stash( 'blog', MT::Blog->load( $category->blog_id ) );
+                $ctx->stash( 'blog_id', $category->blog_id );
+            }
         }
     }
     if ( my $category_arg = $args->{ folder } ) {
-        my $category = $ctx->cat_path_to_category( $category_arg,
-            [ \%blog_terms, \%blog_args ], 'folder' );
-        $ctx->{ __stash }{ category } = $category;
-        $ctx->{ __stash }{ archive_category } = $category;
-        if ( $blog->id != $category->blog_id ) {
-            $ctx->{ __stash }{ blog } = MT::Blog->load( $category->blog_id );
-            $ctx->{ __stash }{ blog_id } = $category->blog_id;
+        my @cats = $ctx->cat_path_to_category( $category_arg,
+            [ \%blog_terms, \%blog_args ], 'category' );
+        if ( @cats ) {
+            my $category = $cats[ 0 ];
+            $ctx->stash( 'category', $category );
+            $ctx->stash( 'archive_category', $category );
+            if ( $blog->id != $category->blog_id ) {
+                $ctx->stash( 'blog', MT::Blog->load( $category->blog_id ) );
+                $ctx->stash( 'blog_id', $category->blog_id );
+            }
         }
     }
     if ( my $current_timestamp = $args->{ current_timestamp } ) {
@@ -76,12 +86,12 @@ sub _hdlr_set_context {
     if ( my $current_timestamp_end = $args->{ current_timestamp_end } ) {
         $ctx->{ current_timestamp_end }= $current_timestamp_end;
     }
-    my $html = $ctx->stash( 'builder' )->build( $ctx, $ctx->stash( 'tokens' ), $cond );
-    $ctx->{ __stash }{ blog } = $orig_blog;
-    $ctx->{ __stash }{ category } = $orig_category;
-    $ctx->{ __stash }{ archive_category } = $orig_category;
-    $ctx->{ __stash }{ entry } = $orig_entry;
-    $ctx->{ __stash }{ author } = $orig_author;
+    my $html = $builder->build( $ctx, $tokens, $cond );
+    $ctx->stash( 'blog', $orig_blog );
+    $ctx->stash( 'category', $orig_category );
+    $ctx->stash( 'archive_category', $orig_category );
+    $ctx->stash( 'entry', $orig_entry );
+    $ctx->stash( 'author', $orig_author );
     $ctx->{ current_timestamp } = $orig_current_timestamp;
     $ctx->{ current_timestamp_end } = $orig_current_timestamp_end;
     return $html;
@@ -89,24 +99,11 @@ sub _hdlr_set_context {
 
 sub _hdlr_clear_context {
     my ( $ctx, $args, $cond ) = @_;
-    my $orig_category = $ctx->stash( 'category' );
-    my $orig_entry = $ctx->stash( 'entry' );
-    my $orig_author = $ctx->stash( 'author' );
-    my $orig_current_timestamp = $ctx->{ current_timestamp };
-    my $orig_current_timestamp_end = $ctx->{ current_timestamp_end };
-    my @keys = qw/ category archive_category entry author /;
-    for my $stash ( @keys ) {
-        $ctx->{ __stash }{ $stash } = undef;
-    }
-    $ctx->{ current_timestamp }= undef;
-    $ctx->{ current_timestamp_end }= undef;
-    my $html = $ctx->stash( 'builder' )->build( $ctx, $ctx->stash( 'tokens' ), $cond );
-    $ctx->{ __stash }{ category } = $orig_category;
-    $ctx->{ __stash }{ archive_category } = $orig_category;
-    $ctx->{ __stash }{ entry } = $orig_entry;
-    $ctx->{ __stash }{ author } = $orig_author;
-    $ctx->{ current_timestamp } = $orig_current_timestamp;
-    $ctx->{ current_timestamp_end } = $orig_current_timestamp_end;
+    my $tokens = $ctx->stash( 'tokens' );
+    my $builder = $ctx->stash( 'builder' );
+    require MT::Template::Context;
+    $ctx = MT::Template::Context->new;
+    my $html = $builder->build( $ctx, $tokens, $cond );
     return $html;
 }
 
