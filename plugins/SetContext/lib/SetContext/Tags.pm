@@ -69,7 +69,7 @@ sub _hdlr_set_context {
     }
     if ( my $category_arg = $args->{ folder } ) {
         my @cats = $ctx->cat_path_to_category( $category_arg,
-            [ \%blog_terms, \%blog_args ], 'category' );
+            [ \%blog_terms, \%blog_args ], 'folder' );
         if ( @cats ) {
             my $category = $cats[ 0 ];
             $ctx->stash( 'category', $category );
