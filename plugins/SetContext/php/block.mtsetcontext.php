@@ -73,11 +73,13 @@ function smarty_block_mtsetcontext( $args, $content, $ctx, &$repeat ) {
         }
         if ( isset( $args[ 'entry_id' ] ) ) {
             $entry = $ctx->mt->db()->fetch_entry( $args[ 'entry_id' ] );
-            $ctx->stash( 'entry', $entry );
-            if ( $blog->id != $entry->blog_id ) {
-                $blog = $ctx->mt->db()->fetch_blog( $entry->blog_id );
-                $ctx->stash( 'blog', $blog );
-                $ctx->stash( 'blog_id', $entry->blog_id );
+            if ( $entry->blog_id ) {
+                $ctx->stash( 'entry', $entry );
+                if ( $blog->id != $entry->blog_id ) {
+                    $blog = $ctx->mt->db()->fetch_blog( $entry->blog_id );
+                    $ctx->stash( 'blog', $blog );
+                    $ctx->stash( 'blog_id', $entry->blog_id );
+                }
             }
         }
         if ( isset( $args[ 'current_timestamp' ] ) ) {
