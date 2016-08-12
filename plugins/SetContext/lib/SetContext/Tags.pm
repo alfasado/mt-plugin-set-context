@@ -14,8 +14,10 @@ sub _hdlr_set_context {
     my $orig_current_timestamp_end = $ctx->{ current_timestamp_end };
     my $tokens = $ctx->stash( 'tokens' );
     my $builder = $ctx->stash( 'builder' );
+    my $vars = $ctx->{ __stash }{ vars } ||= {};
     require MT::Template::Context;
     $ctx = MT::Template::Context->new;
+    $ctx->{ __stash }{ vars } = $vars;
     if ( my $blog_id = $args->{ blog_id } ) {
         $blog = MT::Blog->load( $blog_id );
         $ctx->stash( 'blog', $blog );
