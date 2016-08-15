@@ -88,7 +88,7 @@ sub _hdlr_set_context {
     if ( my $current_timestamp_end = $args->{ current_timestamp_end } ) {
         $ctx->{ current_timestamp_end }= $current_timestamp_end;
     }
-    my $html = $builder->build( $ctx, $tokens, $cond );
+    my $out = $builder->build( $ctx, $tokens, $cond );
     $ctx->stash( 'blog', $orig_blog );
     $ctx->stash( 'category', $orig_category );
     $ctx->stash( 'archive_category', $orig_category );
@@ -96,7 +96,7 @@ sub _hdlr_set_context {
     $ctx->stash( 'author', $orig_author );
     $ctx->{ current_timestamp } = $orig_current_timestamp;
     $ctx->{ current_timestamp_end } = $orig_current_timestamp_end;
-    return $html;
+    return $out;
 }
 
 sub _hdlr_clear_context {
@@ -104,9 +104,10 @@ sub _hdlr_clear_context {
     my $tokens = $ctx->stash( 'tokens' );
     my $builder = $ctx->stash( 'builder' );
     require MT::Template::Context;
+    my $vars = $ctx->{__stash}{vars};
     $ctx = MT::Template::Context->new;
-    my $html = $builder->build( $ctx, $tokens, $cond );
-    return $html;
+    $ctx->stash('vars', $vars);
+    $builder->build( $ctx, $tokens, $cond );
 }
 
 1;
